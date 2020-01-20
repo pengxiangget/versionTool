@@ -72,16 +72,22 @@ public class MainUI extends JFrame implements ActionListener {
         cloudLabel = new JLabel("云标识");
         jp1.add(cloudLabel);
         cloudFiled = new JTextField(6);
+        //设置默认值
+        cloudFiled.setText("ec");
         jp1.add(cloudFiled);
 
         appsLabel = new JLabel("应用标识");
         jp1.add(appsLabel);
         appsFiled = new JTextField(15);
+        //设置默认值
+        appsFiled.setText("cont,ecbd,ecco,ecma");
         jp1.add(appsFiled);
 
         versionLabel = new JLabel("版本号");
         jp1.add(versionLabel);
         versionNoFiled = new JTextField(10);
+        //设置默认值
+        versionNoFiled.setText("2.0.");
         jp1.add(versionNoFiled);
 
         pathLabel = new JLabel("补丁文件目录");
@@ -228,7 +234,7 @@ public class MainUI extends JFrame implements ActionListener {
             app.addElement("name").addText(appName);
             app.addElement("ver").addText(versionNo);
             for (String appid : appidList) {
-                if (appid.contains(appName)) {
+                if (appName.contains(appid)) {
                     app.addElement("appids").addText(appid);
                     break;
                 }
@@ -236,16 +242,16 @@ public class MainUI extends JFrame implements ActionListener {
             app.addElement("force").addText("true");
 
             StringBuffer resource = new StringBuffer();
-            for (String jarName : jarMap.keySet()) {
-                if (jarName.contains(appName)) {
-                    resource.append(StringUtil.getHashCode(jarName));
+            for (String dmName : dmMap.keySet()) {
+                if (dmName.contains(appName)) {
+                    resource.append(StringUtil.getHashCode(dmName));
                     break;
                 }
             }
-            for (String dmName : dmMap.keySet()) {
-                if (dmName.contains(appName)) {
+            for (String jarName : jarMap.keySet()) {
+                if (jarName.contains(appName)) {
                     resource.append(",");
-                    resource.append(StringUtil.getHashCode(dmName));
+                    resource.append(StringUtil.getHashCode(jarName));
                     break;
                 }
             }
@@ -266,7 +272,7 @@ public class MainUI extends JFrame implements ActionListener {
             Element kdpkg = kdpkgs.addElement("kdpkg");
             kdpkg.addElement("ID").addText(String.valueOf(StringUtil.getHashCode(key)));
             kdpkg.addElement("sourcePath").addText("jar/biz");
-            kdpkg.addElement("outputPath");
+            kdpkg.addElement("outputPath").addText("biz");
             kdpkg.addElement("name").addText(key);
             kdpkg.addElement("md5").addText(jarMap.get(key));
             kdpkg.addElement("type").addText(ZipFileType.jar.toString());
