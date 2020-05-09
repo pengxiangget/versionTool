@@ -1,5 +1,6 @@
 package com.dnsxo.app;
 
+import com.dnsxo.enums.ProductEnum;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
@@ -11,10 +12,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -27,9 +32,16 @@ import java.util.*;
 public class MainUI extends JFrame implements ActionListener {
 
     private JButton createBtn;
+
+    //产品所属类型
+    JComboBox<String> jComboBox;
     //补丁目录
     private JLabel pathLabel;
     private JTextField folderFiled;
+    private JButton selectFolder = new JButton("...");
+    // 文件选择器
+    private JFileChooser jFileChooser = new JFileChooser();
+
     //版本号
     private JLabel versionLabel;
     private JTextField versionNoFiled;
@@ -50,8 +62,9 @@ public class MainUI extends JFrame implements ActionListener {
         initFrame();
     }
 
+    //布局
     public void initFrame() {
-        this.setTitle("金蝶苍穹行业版补丁制作工具");
+        this.setTitle("金蝶苍穹补丁制作工具");
         this.setSize(200, 200);
         this.setLocation(100, 100);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -68,19 +81,22 @@ public class MainUI extends JFrame implements ActionListener {
         getContentPane().add("Center", jp2);
         getContentPane().add("South", jp3);
 
+        //下拉列表
+        jComboBox = new JComboBox<String>();
+        jComboBox.addItem("标准产品");
+        jComboBox.addItem("行业产品-建筑与房地产");
+        jp1.add(jComboBox);
+        jComboBox.addActionListener(this);
 
         cloudLabel = new JLabel("云标识");
         jp1.add(cloudLabel);
         cloudFiled = new JTextField(6);
-        //设置默认值
-        cloudFiled.setText("ec");
+
         jp1.add(cloudFiled);
 
         appsLabel = new JLabel("应用标识");
         jp1.add(appsLabel);
         appsFiled = new JTextField(15);
-        //设置默认值
-        appsFiled.setText("cont,ecbd,ecco,ecma");
         jp1.add(appsFiled);
 
         versionLabel = new JLabel("版本号");
@@ -94,6 +110,10 @@ public class MainUI extends JFrame implements ActionListener {
         jp1.add(pathLabel);
         folderFiled = new JTextField(30);
         jp1.add(folderFiled);
+        jp1.add(selectFolder);
+        // 添加事件处理
+        selectFolder.addActionListener(this);
+
 
         createBtn = new JButton("开始制作");
         createBtn.addActionListener(this);
@@ -110,109 +130,141 @@ public class MainUI extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        String cloud = cloudFiled.getText().trim();
-        if ("".equals(cloud)) {
-            JOptionPane.showMessageDialog(null, "请输入云标识", "", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String apps = appsFiled.getText().trim();
-        if ("".equals(apps)) {
-            JOptionPane.showMessageDialog(null, "请输入应用标识", "", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String versionNo = versionNoFiled.getText().trim();
-        if ("".equals(versionNo)) {
-            JOptionPane.showMessageDialog(null, "请输入补丁版本号", "", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String folderPath = folderFiled.getText().trim();
-        if ("".equals(folderPath)) {
-            JOptionPane.showMessageDialog(null, "请输入补丁文件目录", "", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        //通过云标识、应用标识组合dm、jar文件报名
-        List<String> appNameList = new ArrayList<String>();
-        List<String> appidList = Arrays.asList(apps.split(","));
-        for (String appid : appidList) {
-            appNameList.add(cloud + "-" + appid);
-        }
-
-        File dmFolder = new File(folderPath + File.separator + ZipFileType.dm.toString());
-        File[] dmFiles = dmFolder.listFiles();
-        if (dmFiles.length == 0) {
-            JOptionPane.showMessageDialog(null, "dm目录下不能为空", "", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        File jarFolder = new File(folderPath + File.separator + ZipFileType.jar.toString() + File.separator + "biz");
-        File[] jarFiles = jarFolder.listFiles();
-        if (jarFiles.length == 0) {
-            JOptionPane.showMessageDialog(null, "jar目录下不能为空", "", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        info.setText("开始制作补丁\n");
-        info.append("文件的MD5值生成中......\n");
-        Map<String, Map<String, String>> md5Map = new HashMap<String, Map<String, String>>();
-        Map<String, String> dmMap = new HashMap<String, String>();
-        MessageDigest md = null;
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException ex) {
-            ex.printStackTrace();
-        }
-        //获取dm文件的MD5值
-        for (File dm : dmFiles) {
-            FileInputStream input = null;
-            try {
-                input = new FileInputStream(dm);
-                String md5 = DigestUtils.md5Hex(input);
-                dmMap.put(dm.getName(), md5);
-                info.append("文件:" + dm.getName() + ", MD5值:" + md5 + "\n");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                continue;
+       Object source = e.getSource();
+        // 判断触发方法的按钮是哪个
+        if (selectFolder.equals(source)) {
+            // 设定只能选择到文件夹
+            jFileChooser.setFileSelectionMode(1);
+            // 此句是打开文件选择器界面的触发语句
+            int state = jFileChooser.showOpenDialog(null);
+            if (state == 1) {
+                return;
+            } else {
+                // f为选择到的目录
+                File folder = jFileChooser.getSelectedFile();
+                folderFiled.setText(folder.getAbsolutePath());
             }
         }
-        md5Map.put(ZipFileType.dm.toString(), dmMap);
-        //获取jar文件的MD5值
-        Map<String, String> jarMap = new HashMap<String, String>();
-        for (File jar : jarFiles) {
-            FileInputStream input = null;
+        else if(jComboBox.equals(source)){
+            ProductEnum type = ProductEnum.values()[jComboBox.getSelectedIndex()];
+           //设置默认值
+            if(ProductEnum.BIZ == type){
+                cloudFiled.setText("pmgt");
+                appsFiled.setText("pmbs,pmas,pmba,pmct,pmco,pmim,pmfs,pmsc,pmem");
+            }else if(ProductEnum.CR == type){
+                cloudFiled.setText("ec");
+                appsFiled.setText("cont,ecbd,ecco,ecma");
+            }
+
+        }
+        else if(createBtn.equals(source)) {
+
+            //获取补丁所属产品
+            ProductEnum type = ProductEnum.values()[jComboBox.getSelectedIndex()];
+            String cloud = cloudFiled.getText().trim();
+            if ("".equals(cloud)) {
+                JOptionPane.showMessageDialog(null, "请输入云标识", "", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String apps = appsFiled.getText().trim();
+            if ("".equals(apps)) {
+                JOptionPane.showMessageDialog(null, "请输入应用标识", "", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String versionNo = versionNoFiled.getText().trim();
+            if ("".equals(versionNo)) {
+                JOptionPane.showMessageDialog(null, "请输入补丁版本号", "", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String folderPath = folderFiled.getText().trim();
+            if ("".equals(folderPath)) {
+                JOptionPane.showMessageDialog(null, "请输入补丁文件目录", "", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            //通过云标识、应用标识组合dm、jar文件报名
+            List<String> appNameList = new ArrayList<String>();
+            List<String> appidList = Arrays.asList(apps.split(","));
+            for (String appid : appidList) {
+                appNameList.add(cloud + "-" + appid);
+            }
+
+            File dmFolder = new File(folderPath + File.separator + ZipFileType.dm.toString());
+            File[] dmFiles = dmFolder.listFiles();
+            if (dmFiles.length == 0) {
+                JOptionPane.showMessageDialog(null, "dm目录下不能为空", "", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            File jarFolder = new File(folderPath + File.separator + ZipFileType.jar.toString() + File.separator + "biz");
+            File[] jarFiles = jarFolder.listFiles();
+            if (jarFiles.length == 0) {
+                JOptionPane.showMessageDialog(null, "jar目录下不能为空", "", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            info.setText(LocalDateTime.now()  + ",开始制作补丁\n");
+            info.append("文件的MD5值生成中......\n");
+            Map<String, Map<String, String>> md5Map = new HashMap<String, Map<String, String>>();
+            Map<String, String> dmMap = new HashMap<String, String>();
+            MessageDigest md = null;
             try {
-                input = new FileInputStream(jar);
-                String md5 = DigestUtils.md5Hex(input);
-                jarMap.put(jar.getName(), md5);
-                info.append("文件:" + jar.getName() + ", MD5值:" + md5 + "\n");
+                md = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException ex) {
+                ex.printStackTrace();
+            }
+            //获取dm文件的MD5值
+            for (File dm : dmFiles) {
+                FileInputStream input = null;
+                try {
+                    input = new FileInputStream(dm);
+                    String md5 = DigestUtils.md5Hex(input);
+                    dmMap.put(dm.getName(), md5);
+                    info.append("文件:" + dm.getName() + ", MD5值:" + md5 + "\n");
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    continue;
+                }
+            }
+            md5Map.put(ZipFileType.dm.toString(), dmMap);
+            //获取jar文件的MD5值
+            Map<String, String> jarMap = new HashMap<String, String>();
+            for (File jar : jarFiles) {
+                FileInputStream input = null;
+                try {
+                    input = new FileInputStream(jar);
+                    String md5 = DigestUtils.md5Hex(input);
+                    jarMap.put(jar.getName(), md5);
+                    info.append("文件:" + jar.getName() + ", MD5值:" + md5 + "\n");
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    continue;
+                }
+            }
+            md5Map.put(ZipFileType.jar.toString(), jarMap);
+
+            String xmlFile = folderPath + File.separator + "kdpkgs.xml";
+            info.append("配置文件生成中......\n");
+            try {
+                this.createXml(type,appNameList, appidList, versionNo, md5Map, xmlFile);
             } catch (Exception ex) {
                 ex.printStackTrace();
-                continue;
+                info.append("生成配置文件异常：" + ex.getMessage() + "\n");
             }
-        }
-        md5Map.put(ZipFileType.jar.toString(), jarMap);
+            info.append("配置文件：" + xmlFile + "\n");
 
-        String xmlFile = folderPath + File.separator + "kdpkgs.xml";
-        info.append("配置文件生成中......\n");
-        try {
-            this.createXml(appNameList, appidList, versionNo, md5Map, xmlFile);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            info.append("生成配置文件异常：" + ex.getMessage() + "\n");
+            //打成压缩包
+            info.append("补丁包压缩中.....\n");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMdd");
+            String zipPatch = CompressFileUtil.compress(folderPath, folderPath, cloud + "-v" + versionNo + "-" + formatter.format(LocalDate.now()));
+            info.append(LocalDateTime.now() + "，补丁制作完成，补丁包位置：" + zipPatch + "\n");
         }
-        info.append("配置文件：" + xmlFile + "\n");
-
-        //打成压缩包
-        info.append("补丁包压缩中.....\n");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMdd");
-        String zipPatch = CompressFileUtil.compress(folderPath, folderPath, cloud + "-v" + versionNo + "-" + formatter.format(LocalDate.now()));
-        info.append("补丁制作完成，补丁包位置:" + zipPatch + "\n");
     }
 
     //生成xml文件
-    private void createXml(List<String> appNameList, List<String> appidList, String versionNo, Map<String, Map<String, String>> md5Map, String xmlFile) throws Exception{
+    private void createXml(ProductEnum type, List<String> appNameList, List<String> appidList, String versionNo, Map<String, Map<String, String>> md5Map, String xmlFile) throws Exception{
         //创建xml文档
         Document document = DocumentHelper.createDocument();
         //创建根元素
@@ -221,11 +273,15 @@ public class MainUI extends JFrame implements ActionListener {
         Element description = kdpkgs.addElement("description");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         description.addElement("time").addText(formatter.format(ZonedDateTime.now()));
-        description.addElement("content").addText("苍穹行业补丁工具自动生成");
+        description.addElement("content").addText("苍穹补丁工具自动生成");
 
         //添加根元素下的子元素及其属性,内容
         Element product = kdpkgs.addElement("product");
-        product.addAttribute("name", "cosmic_cr").addAttribute("nameCN", "金蝶云苍穹建筑与房地产行业版").addAttribute("ver", versionNo);
+        if(type == ProductEnum.BIZ) {
+            product.addAttribute("name", "cosmic_" + type.getTypeCode()).addAttribute("nameCN", "金蝶云苍穹平台" + type.getName()).addAttribute("ver", versionNo);
+        }else{
+            product.addAttribute("name", "cosmic_" + type.getTypeCode()).addAttribute("nameCN", "金蝶云苍穹" + type.getName()+ "行业版").addAttribute("ver", versionNo);
+        }
         product.addElement("force").addText("true");
         Map<String, String> jarMap = md5Map.get(ZipFileType.jar.toString());
         Map<String, String> dmMap = md5Map.get(ZipFileType.dm.toString());
