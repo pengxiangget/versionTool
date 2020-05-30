@@ -9,7 +9,9 @@ public enum ProductEnum {
 
     BIZ(1,"标准产品","biz"),
 
-    CR(2,"行业产品-建筑与房地产","cr");
+    CR(2,"行业产品-建筑与房地产","cr"),
+
+    SYS(3,"系统云","sys");
 
 
     private int code;

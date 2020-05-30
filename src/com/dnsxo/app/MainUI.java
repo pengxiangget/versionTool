@@ -154,6 +154,9 @@ public class MainUI extends JFrame implements ActionListener {
             }else if(ProductEnum.CR == type){
                 cloudFiled.setText("ec");
                 appsFiled.setText("cont,ecbd,ecco,ecma");
+            }else if(ProductEnum.SYS == type){
+                cloudFiled.setText("bd");
+                appsFiled.setText("bd");
             }
 
         }
@@ -194,15 +197,12 @@ public class MainUI extends JFrame implements ActionListener {
 
             File dmFolder = new File(folderPath + File.separator + ZipFileType.dm.toString());
             File[] dmFiles = dmFolder.listFiles();
-            if (dmFiles.length == 0) {
-                JOptionPane.showMessageDialog(null, "dm目录下不能为空", "", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
 
             File jarFolder = new File(folderPath + File.separator + ZipFileType.jar.toString() + File.separator + "biz");
             File[] jarFiles = jarFolder.listFiles();
-            if (jarFiles.length == 0) {
-                JOptionPane.showMessageDialog(null, "jar目录下不能为空", "", JOptionPane.ERROR_MESSAGE);
+
+            if (dmFiles.length == 0 && jarFiles.length == 0) {
+                JOptionPane.showMessageDialog(null, "dm、jar目录下不能同时为空", "", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             info.setText(LocalDateTime.now()  + ",开始制作补丁\n");
