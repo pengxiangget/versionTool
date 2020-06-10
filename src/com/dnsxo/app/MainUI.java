@@ -83,8 +83,8 @@ public class MainUI extends JFrame implements ActionListener {
 
         //下拉列表
         jComboBox = new JComboBox<String>();
-        jComboBox.addItem("标准产品");
-        jComboBox.addItem("行业产品-建筑与房地产");
+        jComboBox.addItem(ProductEnum.BIZ.getName());
+        jComboBox.addItem(ProductEnum.CR.getName());
         jp1.add(jComboBox);
         jComboBox.addActionListener(this);
 
@@ -150,13 +150,10 @@ public class MainUI extends JFrame implements ActionListener {
            //设置默认值
             if(ProductEnum.BIZ == type){
                 cloudFiled.setText("pmgt");
-                appsFiled.setText("pmbs,pmas,pmba,pmct,pmco,pmim,pmfs,pmsc,pmem");
+                appsFiled.setText("pmbs,pmpm,pmas,pmba,pmct,pmco,pmim,pmfs,pmsc,pmem");
             }else if(ProductEnum.CR == type){
                 cloudFiled.setText("ec");
                 appsFiled.setText("cont,ecbd,ecco,ecma");
-            }else if(ProductEnum.SYS == type){
-                cloudFiled.setText("bd");
-                appsFiled.setText("bd");
             }
 
         }
@@ -217,6 +214,9 @@ public class MainUI extends JFrame implements ActionListener {
             }
             //获取dm文件的MD5值
             for (File dm : dmFiles) {
+                if(this.macDefaultFile(dm)){
+                    continue;
+                }
                 FileInputStream input = null;
                 try {
                     input = new FileInputStream(dm);
@@ -232,6 +232,9 @@ public class MainUI extends JFrame implements ActionListener {
             //获取jar文件的MD5值
             Map<String, String> jarMap = new HashMap<String, String>();
             for (File jar : jarFiles) {
+                if(this.macDefaultFile(jar)){
+                    continue;
+                }
                 FileInputStream input = null;
                 try {
                     input = new FileInputStream(jar);
@@ -352,5 +355,9 @@ public class MainUI extends JFrame implements ActionListener {
         MainUI util = new MainUI();
         util.setVisible(true);
         util.pack();
+    }
+
+    private boolean macDefaultFile(File file){
+        return file.getName().equalsIgnoreCase(".DS_STORE");
     }
 }

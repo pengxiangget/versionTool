@@ -7,12 +7,9 @@ package com.dnsxo.enums;
  */
 public enum ProductEnum {
 
-    BIZ(1,"标准产品","biz"),
+    BIZ(1,"标准产品（业务）","biz"),
 
-    CR(2,"行业产品-建筑与房地产","cr"),
-
-    SYS(3,"系统云","sys");
-
+    CR(2,"行业产品（建筑与房地产）","cr");
 
     private int code;
     private String name;
