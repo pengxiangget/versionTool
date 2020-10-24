@@ -85,6 +85,7 @@ public class MainUI extends JFrame implements ActionListener {
         jComboBox = new JComboBox<String>();
         jComboBox.addItem(ProductEnum.BIZ.getName());
         jComboBox.addItem(ProductEnum.CR.getName());
+        jComboBox.addItem(ProductEnum.RE.getName());
         jp1.add(jComboBox);
         jComboBox.addActionListener(this);
 
@@ -154,6 +155,9 @@ public class MainUI extends JFrame implements ActionListener {
             }else if(ProductEnum.CR == type){
                 cloudFiled.setText("ec");
                 appsFiled.setText("cont,ecbd,ecco,ecma");
+            }else if(ProductEnum.RE == type){
+                cloudFiled.setText("repc");
+                appsFiled.setText("repla,common");
             }
 
         }

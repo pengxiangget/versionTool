@@ -9,7 +9,9 @@ public enum ProductEnum {
 
     BIZ(1,"标准产品（业务）","biz"),
 
-    CR(2,"行业产品（建筑与房地产）","cr");
+    CR(2,"行业产品（建筑）","cr"),
+
+    RE(3,"行业产品（房地产)","re");
 
     private int code;
     private String name;
