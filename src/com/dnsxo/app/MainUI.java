@@ -12,10 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
@@ -24,6 +21,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author GAOFENG (http://www.dnsxo.com)
@@ -89,10 +88,15 @@ public class MainUI extends JFrame implements ActionListener {
         jp1.add(jComboBox);
         jComboBox.addActionListener(this);
 
+        pathLabel = new JLabel("补丁文件目录");
+        jp1.add(pathLabel);
+        folderFiled = new JTextField(30);
+        jp1.add(folderFiled);
+        jp1.add(selectFolder);
+
         cloudLabel = new JLabel("云标识");
         jp1.add(cloudLabel);
         cloudFiled = new JTextField(6);
-
         jp1.add(cloudFiled);
 
         appsLabel = new JLabel("应用标识");
@@ -107,11 +111,7 @@ public class MainUI extends JFrame implements ActionListener {
         versionNoFiled.setText("2.0.");
         jp1.add(versionNoFiled);
 
-        pathLabel = new JLabel("补丁文件目录");
-        jp1.add(pathLabel);
-        folderFiled = new JTextField(30);
-        jp1.add(folderFiled);
-        jp1.add(selectFolder);
+
         // 添加事件处理
         selectFolder.addActionListener(this);
 
@@ -143,7 +143,50 @@ public class MainUI extends JFrame implements ActionListener {
             } else {
                 // f为选择到的目录
                 File folder = jFileChooser.getSelectedFile();
-                folderFiled.setText(folder.getAbsolutePath());
+                String absolutePath = folder.getAbsolutePath();
+                folderFiled.setText(absolutePath);
+
+                // 设置appName 和 appsFiled
+                String appName = folder.getName();
+                cloudFiled.setText(appName);
+                String allApplicationName = "";
+                FilenameFilter filenameFilter = new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        if (dir.isDirectory() && name.equals("dm")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                };
+
+                File[] files = folder.listFiles(filenameFilter);
+                for(File file : files){
+                    String[] list = file.list(new FilenameFilter() {
+                        @Override
+                        public boolean accept(File dir, String name) {
+                            if(name.contains("zip")){
+                                return true;
+                            }
+                            return false;
+                        }
+                    });
+
+                    Pattern pattern =  Pattern.compile(appName + "-(.*?)-");
+                    for(int i = 0; i < list.length; i++){
+                        Matcher matcher = pattern.matcher(list[i]);
+                        String name  = "";
+                        if(matcher.find()){
+                            name = matcher.group(1);
+                        }
+                        allApplicationName = allApplicationName + name;
+                        if(i != list.length - 1){
+                            allApplicationName += ",";
+                        }
+                    }
+                    appsFiled.setText(allApplicationName);
+                }
+
             }
         }
         else if(jComboBox.equals(source)){
